@@ -1,0 +1,19 @@
+# 編譯輸出
+bin/
+obj/
+
+# NuGet 套件
+packages/
+
+# Visual Studio 快取和使用者設定
+*.csproj.user
+.vs/
+.vscode/
+*.suo
+*.user
+
+# 日誌檔案
+*.log
+
+MockData/
+WriteData/
