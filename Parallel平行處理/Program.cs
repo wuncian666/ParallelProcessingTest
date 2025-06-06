@@ -1,22 +1,5 @@
-﻿// See https://aka.ms/new-console-template for more information
-
-//List<Task> list = new List<Task>();
-//for (int i = 0; i < 10; i++)
-//{
-//    int index = i;
-//    Task task = Task.Run(async () =>
-//    {
-//        await Task.Delay(1000);
-//        Console.WriteLine($"任務{index + 1} 完成");
-//    });
-//    list.Add(task);
-//}
-
-//await Task.WhenAll(list);
-
-using CSVHelper;
+﻿using CSVHelper;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace Parallel平行處理
@@ -29,43 +12,50 @@ namespace Parallel平行處理
         // for read write lock slim case
         private static readonly ReaderWriterLockSlim readWriteLockSlimObject = new();
 
-        private static async Task Main(string[] args)
-        {
-            int totalSize = 10000000;
-            int batchSize = 3500000;
-            BatchConfig config = new(totalSize, batchSize);
+        private static readonly int _totalSize = 60000000;
+        private static readonly int _batchSize = 3500000;
 
+        private static async Task Main()
+        {
+            BatchConfig config = new(_totalSize, _batchSize);
+
+            await LockProcessAsync(config);
             //await ProcessConcurrentAsync(config);
-            await ReadWriteLockSlimAsync(config);
+            //await ReadWriteLockSlimAsync(config);
             //await SemaphoreSlim(config);
         }
 
         private static async Task LockProcessAsync(BatchConfig config)
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
-
-            await Parallel.ForEachAsync(Enumerable.Range(0, config.BatchCount), new ParallelOptions { MaxDegreeOfParallelism = 5 }, async (count, token) =>
+            List<double> readTimes = [];
+            List<double> writeTimes = [];
+            await Parallel.ForAsync(0, config.BatchCount, async (count, token) =>
             {
                 int current = config.BatchSize * count;
                 string range = $"{current} ~ {current + config.BatchSize}";
                 Console.WriteLine($"第{count + 1}批開始讀取{range}筆資料");
 
                 Stopwatch sw = Stopwatch.StartNew();
-                CSV csv = new();
-                var datas = csv.Read<MockModel>(config.Readpath, false, current, config.BatchSize);
-                Console.WriteLine($"第{count + 1}批讀取{range}筆資料完成，耗時:{sw.ElapsedMilliseconds / 1000.0f}s");
-
+                var data = CSVOptimize.ReadOptimize<MockModel>(config.Readpath, current, config.BatchSize);
+                sw.Stop();
+                readTimes.Add(sw.ElapsedMilliseconds / 1000.0f);
+                sw.Restart();
+                bool append = count != 0;
                 lock (lockObject)
                 {
-                    sw = Stopwatch.StartNew();
-                    CSV.Write(config.Writepath, datas, true, true);
+                    CSVOptimize.WriteOptimize<MockModel>(config.Writepath, data, append);
                     sw.Stop();
-                    Console.WriteLine($"寫入耗時:{sw.ElapsedMilliseconds / 1000.0f}s");
+                    writeTimes.Add(sw.ElapsedMilliseconds / 1000.0f);
                 }
+
+                data.Clear();
+                data = null;
+                GC.Collect();
             });
 
             stopwatch.Stop();
-            Console.WriteLine($"全部任務完成,耗時:{stopwatch.ElapsedMilliseconds / 1000.0f}");
+            Console.WriteLine($"| {_totalSize} | {readTimes.Median():#0.00} | {writeTimes.Median():#0.00} | {stopwatch.ElapsedMilliseconds / 1000.0:#0.00} | 2600 |");
         }
 
         private static async Task ProcessConcurrentAsync(BatchConfig config)

@@ -1,3 +1,7 @@
+## 硬體規格
+CPU i5-13500  PCore:7 Eocre:6 執行續總數 20
+記憶體 32GB
+
 ## 讀
 
 筆數 | 時間(s) | 記憶體(mb)
@@ -263,3 +267,4 @@ lock 速度最快
 用最大值做 Parallel 分批讀取
 並且設定 MaxDegreeOfParallelism(執行續開啟上限) = 5
 寫入時 1000 萬筆時，使用 ConcurrentBag 效果最佳
+

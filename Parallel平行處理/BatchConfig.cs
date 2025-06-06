@@ -1,26 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Parallel平行處理
+﻿namespace Parallel平行處理
 {
-    public class BatchConfig
+    public class BatchConfig(int totalSize, int batchSize)
     {
-        public int BatchSize { set; get; }
-        public int TotalSzie { set; get; }
-        public int BatchCount { set; get; }
-        public string Readpath { set; get; }
-        public string Writepath { set; get; }
-
-        public BatchConfig(int totalSize, int batchSize)
-        {
-            this.TotalSzie = totalSize;
-            this.BatchSize = batchSize;
-            this.BatchCount = totalSize / batchSize + 1;
-            this.Readpath = $@"C:\Users\wuncian\source\repos\平行運算\MockData\MOCK_DATA_{totalSize}筆.csv";
-            this.Writepath = $@"C:\Users\wuncian\source\repos\平行運算\WriteDatas\MOCK_DATA_{totalSize}筆.csv";
-        }
+        public int BatchSize { set; get; } = batchSize;
+        public int TotalSzie { set; get; } = totalSize;
+        public int BatchCount { set; get; } = (totalSize % batchSize) == 0 ? (totalSize / batchSize) : (totalSize / batchSize) + 1;
+        public string Readpath { set; get; } = $@"D:\csv-process\csv-mock-data\MOCK_DATA_{totalSize}筆.csv";
+        public string Writepath { set; get; } = $@"D:\csv-process\csv-write-data\MOCK_DATA_{totalSize}筆.csv";
     }
 }
